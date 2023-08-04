@@ -1,5 +1,4 @@
 const api_url_sw = "https://www.swapi.tech/api/"
-// Need a hint? try people/1/ or planets/3/ or starships/9/
 
 const api_url_coffee = "https://sampleapis.com/api-list/coffee/"
 // /hot or /iced
@@ -13,46 +12,65 @@ async function getapi ( url ) {
 
     if ( typeof ( url ) !== 'string' ) console.error( 'invalid url' )
 
-    const response = await fetch ( url )
+    try {
 
-    const data = await response.json()
-    console.log ( data )
-    
-    if ( response ) {
-        hideloader()
+        const response = await fetch ( url )
+        
+        const data = await response.json()
+        console.log ( 'data received' )
+
+        if ( response ) {
+            hideloader()
+        }
+
+        return data ? data : response
+
+    } catch ( err ) {
+        console.error(`FAILED TO FETCH ${ err }`)
     }
 
-    // === MAKE A SWITCH in the end. no need to duplicate code
-    show ( data, 'name' )
+}
+
+function hideloader () {
+    document.getElementById( 'loading' ).style.display = 'none'
 }
 
 const characters = sw_url ( api_url_sw, 'people' )
-getapi( characters );
 
-const show = function ( list, key ) {
-    
+const show = function ( data, key1, key2 ) {
+    // error handling if no data received
+    if ( !data ) { return }
+
     // create a list of bulletpoints to use them in dropdown menu
-    
+    const getValue = function ( e ) {
+        e.preventDefault()
+        console.log( e.target.value )
+    }
     // create a dropdown menu
-    const formWrapper = document.getElementById( 'form-wrapper' )
+    const formWrapper = document.getElementById('form-wrapper')
     const form = document.createElement('form')
     formWrapper.appendChild(form)
     const select = document.createElement('select')
+    select.addEventListener('change', getValue)
     form.appendChild(select)
 
     // populate the menu
+    // flatten the array. make tuples [name and url]
+    // assign attributes name and url for each option
     const makeOptions = function ( ) {
-        list.results
-        .reduce( ( memo, obj ) => memo.concat( obj[ key ] ) , [] )
-        .forEach( el => {
+    data.results
+        .reduce( (memo, obj) => memo.concat([[obj[key1], obj[key2]]]), [])
+        .forEach( (el, i, list) => {
             const option = document.createElement('option')
-            option.text = el
+            const charName = el[0]
+            const charURL = el[1]
+            option.text = charName
+            option.setAttribute('id', charName)
+            option.setAttribute('url', charURL)
             select.append(option)
         })
     }
     makeOptions()
 }
 
-function hideloader () {
-    document.getElementById( 'loading' ).style.display = 'none'
-}
+const showDropDown = getapi( characters ).then( ( data ) => show ( data, 'name', 'url' ) );
