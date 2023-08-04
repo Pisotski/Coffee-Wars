@@ -56,4 +56,3 @@ const show = function ( list, key ) {
 function hideloader () {
     document.getElementById( 'loading' ).style.display = 'none'
 }
-
