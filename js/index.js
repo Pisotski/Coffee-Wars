@@ -8,7 +8,7 @@ const sw_url = function ( api, endpoint ) {
     return `${api}${endpoint}`
 }
 
-async function getapi ( url ) {
+async function getapi (url) {
 
     if ( typeof ( url ) !== 'string' ) console.error( 'invalid url' )
 
@@ -31,46 +31,94 @@ async function getapi ( url ) {
 
 }
 
+// =====>>>> remake hide module
 function hideloader () {
     document.getElementById( 'loading' ).style.display = 'none'
 }
 
 const characters = sw_url ( api_url_sw, 'people' )
 
-const show = function ( data, key1, key2 ) {
+const createDropdown = function ( data, key1, key2 ) {
     // error handling if no data received
     if ( !data ) { return }
 
     // create a list of bulletpoints to use them in dropdown menu
-    const getValue = function ( e ) {
-        e.preventDefault()
-        console.log( e.target.value )
-    }
     // create a dropdown menu
     const formWrapper = document.getElementById('form-wrapper')
     const form = document.createElement('form')
-    formWrapper.appendChild(form)
     const select = document.createElement('select')
-    select.addEventListener('change', getValue)
+    select.addEventListener('change', handleDropdownSelect)
     form.appendChild(select)
 
     // populate the menu
     // flatten the array. make tuples [name and url]
     // assign attributes name and url for each option
-    const makeOptions = function ( ) {
+    const createOptions = function ( ) {
     data.results
         .reduce( (memo, obj) => memo.concat([[obj[key1], obj[key2]]]), [])
         .forEach( (el, i, list) => {
             const option = document.createElement('option')
             const charName = el[0]
             const charURL = el[1]
-            option.text = charName
-            option.setAttribute('id', charName)
+            option.setAttribute('label', charName)
             option.setAttribute('url', charURL)
             select.append(option)
         })
     }
-    makeOptions()
+    createOptions()
+
+    show ( formWrapper, form )
 }
 
-const showDropDown = getapi( characters ).then( ( data ) => show ( data, 'name', 'url' ) );
+const createBio = function ( bio ) {
+
+    // in a perfect world keys and values must be tested 
+    // for the sake of saving time for this project I've chosen not to dispay 
+    // N/A is there is no value for a certain key 
+    
+    // Bio Template
+    // {
+    //     Name: string
+    //     Birth Year: string
+    //     Eye_color: string
+    //     Gender: string
+    //     Hair Color: string
+    //     Height: string
+    //     Homeworld: apicall -> string -> maybe hyperlink
+    //     Skin Color: string
+    // }
+
+    // <div id="bio-wrapper">
+    //    <ul id="${name}-bio-ul" label="name">
+    //      <li id="${name}-${key}-li" class="${name}-bio-li">...</li></ul></div>
+
+    console.log(bio)
+
+    return document.createElement('div')
+}
+
+const show = function ( parent, module ) {
+    parent.appendChild(module)
+    return
+}
+
+const spacesToDashes = function ( string ) {
+    // helper function to make 
+    // all letters to lowercase and 
+    // to swap spaces with dashes for better navigation and consistency
+
+    typeof( string === "string") ? string : string.toSting()
+    string = string.toLowerCase()
+    return `${string.split(' ').join('-')}-`
+}
+
+// on click get information and display it
+const handleDropdownSelect = function ( e ) {
+    e.preventDefault()
+    const optionNum = e.target.selectedIndex
+    const optionUrl = e.target[optionNum].getAttribute('url')
+    const mainWrapper = document.getElementById('main-wrapper')
+    getapi(optionUrl)
+    .then(data => show(mainWrapper, createBio(data)))
+}
+const showDropDown = getapi( characters ).then( ( data ) => createDropdown ( data, 'name', 'url' ) );
