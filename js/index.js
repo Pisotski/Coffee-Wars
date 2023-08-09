@@ -70,46 +70,118 @@ const createDropdown = function ( data, key1, key2 ) {
     show ( formWrapper, form )
 }
 
-const createBio = function ( bio ) {
+const removeKeys = function (obj, keys) {
+    // both arguments must be objects
+    const cleanObj = {}
+    for(let key in obj) {
+        if(!keys[key]) {
+            cleanObj[key] = obj[key]
+        }
+    }
+    return cleanObj
+}
 
-    // in a perfect world keys and values must be tested 
-    // for the sake of saving time for this project I've chosen not to dispay 
-    // N/A is there is no value for a certain key 
-    
-    // Bio Template
-    // {
-    //     Name: string
-    //     Birth Year: string
-    //     Eye_color: string
-    //     Gender: string
-    //     Hair Color: string
-    //     Height: string
-    //     Homeworld: apicall -> string -> maybe hyperlink
-    //     Skin Color: string
-    // }
+const createPlanet = function (planet) {
+
+    const unwantedKeys = {
+        "created": 1,
+        "edited": 1,
+        "name": 1,
+        "url": 1
+    }
+    const planetName = planet.result.properties.name
+    const planetClean = removeKeys(planet.result.properties, unwantedKeys)
+    const planetList = createList(planetName, planetClean)
+    planetList.style.display = 'none'
+
+    return planetList
+}
+
+let currentPlanet;
+let isCurrentPlanetDisplayed = false;
+
+const createList = function(name, listItems) {
+    // name = string
+    // listItems = object
+    const list = document.createElement('ul')
+    list.innerText = name
+
+    const createLi = function (leftLi, rightLi, nameLi) {
+        const propertiesLi = document.createElement('li')
+        propertiesLi.setAttribute('id', `${spacesToDashes(nameLi)}-${spacesToDashes(leftLi)}`)
+        propertiesLi.innerText = `${leftLi} : ${rightLi}`
+        return propertiesLi
+    }
+
+    for (let prop in listItems) {
+
+        if(listItems[prop] !== 'n/a') {
+            if(prop === 'homeworld') {
+                getapi(listItems[prop])
+                .then(planet => {
+                    currentPlanet = createPlanet(planet)
+                    const planetName = planet.result.properties.name
+                    const li = createLi('homeworld', planetName, planetName)
+                    li.setAttribute('class', 'planet')
+                    li.addEventListener('click', handlePlanetClick)
+                    list.appendChild(li)
+                    li.append(currentPlanet)
+                })
+            } else {
+                const li = createLi(prop, listItems[prop], name);
+                list.appendChild(li)  
+            }
+        }
+    }
+    return list
+}
+
+const createBio = function ( bio ) {
 
     // <div id="bio-wrapper">
     //    <ul id="${name}-bio-ul" label="name">
     //      <li id="${name}-${key}-li" class="${name}-bio-li">...</li></ul></div>
 
-    console.log(bio)
+    const bioProperties = bio.result.properties
+    const heroName = bioProperties.name
+    const unwantedKeys = {
+        'name': 1,
+        'created': 1,
+        'edited': 1,
+        'url': 1
+    }
+    const bioClean = removeKeys(bioProperties, unwantedKeys)
+    const bioWrapper = document.createElement('div')
+    bioWrapper.setAttribute('id', `${spacesToDashes(heroName)}-bio-wrapper`)
+    const bioList = createList(heroName, bioClean)
+    bioWrapper.appendChild(bioList)
 
-    return document.createElement('div')
+    return bioWrapper
 }
 
 const show = function ( parent, module ) {
+
+    // function removeAllChildNodes(parent) {
+    //     while (parent.firstChild) {
+    //         parent.removeChild(parent.firstChild);
+    //     }
+    // }
+    // removeAllChildNodes(parent)
+
     parent.appendChild(module)
     return
 }
 
 const spacesToDashes = function ( string ) {
+    if (typeof(string) !== 'string' && !string ) {
+        console.error('Must be a string')
+        return 
+    }
     // helper function to make 
     // all letters to lowercase and 
     // to swap spaces with dashes for better navigation and consistency
-
-    typeof( string === "string") ? string : string.toSting()
     string = string.toLowerCase()
-    return `${string.split(' ').join('-')}-`
+    return `${string.split(' ').join('-')}`
 }
 
 // on click get information and display it
@@ -121,4 +193,16 @@ const handleDropdownSelect = function ( e ) {
     getapi(optionUrl)
     .then(data => show(mainWrapper, createBio(data)))
 }
-const showDropDown = getapi( characters ).then( ( data ) => createDropdown ( data, 'name', 'url' ) );
+
+const handlePlanetClick = function (e) {
+    e.preventDefault()
+    if(!isCurrentPlanetDisplayed) {
+        currentPlanet.style.display = 'block'
+    } else {
+        currentPlanet.style.display = 'none'
+    }
+    isCurrentPlanetDisplayed = !isCurrentPlanetDisplayed
+}
+
+const showDropDown = getapi(characters)
+    .then(data => createDropdown(data,'name','url'))
