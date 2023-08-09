@@ -33,7 +33,7 @@ async function getapi (url) {
 
 // =====>>>> remake hide module
 function hideloader () {
-    document.getElementById( 'loading' ).style.display = 'none'
+    document.getElementById('loading').style.display = 'none'
 }
 
 const characters = sw_url ( api_url_sw, 'people' )
@@ -75,7 +75,7 @@ const createDropdown = function ( data, key1, key2 ) {
     }
     createOptions()
 
-    show ( formWrapper, form )
+    show (formWrapper, form)
 }
 
 const removeKeys = function (obj, keys) {
@@ -106,7 +106,9 @@ const createPlanet = function (planet) {
 }
 
 let currentPlanet;
+let selectedChar;
 let isCurrentPlanetDisplayed = false;
+let charsStore = {}
 
 const createList = function(name, listItems) {
     // name = string
@@ -169,7 +171,9 @@ const createBio = function ( bio ) {
     }
     const bioClean = removeKeys(bioProperties, unwantedKeys)
     const bioWrapper = document.createElement('div')
-    bioWrapper.setAttribute('id', `${spacesToDashes(heroName)}-bio-wrapper`)
+    const heroId = `${spacesToDashes(heroName)}-bio-wrapper`
+    charsStore[heroName] = heroId
+    bioWrapper.setAttribute('id', heroId)
     const bioList = createList(heroName, bioClean)
     bioWrapper.appendChild(bioList)
 
@@ -189,7 +193,7 @@ const show = function ( parent, module ) {
     return
 }
 
-const spacesToDashes = function ( string ) {
+const spacesToDashes = function (string) {
     if (typeof(string) !== 'string' && !string ) {
         console.error('Must be a string')
         return 
@@ -202,9 +206,22 @@ const spacesToDashes = function ( string ) {
 }
 
 // on click get information and display it
+
 const handleDropdownSelect = function ( e ) {
     e.preventDefault()
     const optionNum = e.target.selectedIndex
+
+    if (selectedChar !== undefined) {
+
+        document.getElementById(charsStore[selectedChar]).style.display = 'none'
+    }
+    selectedChar = e.target[optionNum].label
+    console.log(selectedChar)
+    if (charsStore[selectedChar]) {
+        document.getElementById(charsStore[selectedChar]).style.display = 'block'
+        return
+    }
+    
     const optionUrl = e.target[optionNum].getAttribute('url')
     const mainWrapper = document.getElementById('main-wrapper')
     getapi(optionUrl)
