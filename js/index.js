@@ -64,6 +64,14 @@ const createDropdown = function ( data, key1, key2 ) {
             option.setAttribute('url', charURL)
             select.append(option)
         })
+        const defaultOption = document.createElement('option')
+        defaultOption.setAttribute('value', 'none')
+        defaultOption.setAttribute('label', 'Select a Character')
+        defaultOption.setAttribute('class', 'default-option')
+        defaultOption.selected = true
+        defaultOption.disabled = true
+        defaultOption.hidden = true
+        select.append(defaultOption)
     }
     createOptions()
 
@@ -107,9 +115,16 @@ const createList = function(name, listItems) {
     list.innerText = name
 
     const createLi = function (leftLi, rightLi, nameLi) {
+        
         const propertiesLi = document.createElement('li')
         propertiesLi.setAttribute('id', `${spacesToDashes(nameLi)}-${spacesToDashes(leftLi)}`)
-        propertiesLi.innerText = `${leftLi} : ${rightLi}`
+        
+        if (rightLi instanceof Element) {
+            propertiesLi.innerText = `${leftLi} : `
+            propertiesLi.appendChild(rightLi)
+        } else if (typeof rightLi === 'string') {
+            propertiesLi.innerText = `${leftLi} : ${rightLi}`
+        }
         return propertiesLi
     }
 
@@ -121,9 +136,11 @@ const createList = function(name, listItems) {
                 .then(planet => {
                     currentPlanet = createPlanet(planet)
                     const planetName = planet.result.properties.name
-                    const li = createLi('homeworld', planetName, planetName)
-                    li.setAttribute('class', 'planet')
-                    li.addEventListener('click', handlePlanetClick)
+                    const spanPlanet = document.createElement('span')
+                    spanPlanet.textContent = planetName
+                    spanPlanet.addEventListener('click', handlePlanetClick)
+                    spanPlanet.setAttribute('class', 'planet')
+                    const li = createLi('homeworld', spanPlanet, planetName)
                     list.appendChild(li)
                     li.append(currentPlanet)
                 })
