@@ -10,10 +10,7 @@ const sw_url = function (api, endpoint) {
 
 async function getapi (url) {
 
-    // try returning a planet that is already in the store
-
     if (typeof (url) !== 'string') console.error('invalid url')
-
     try {
         const response = await fetch(url)
         const data = await response.json()
@@ -27,7 +24,8 @@ async function getapi (url) {
 }
 
 function hideloader () {
-    document.getElementById('loading').style.visibility = 'hidden'
+
+    document.getElementById('loading').style.display = 'none'
 }
 
 const characters = sw_url (api_url_sw, 'people')
@@ -82,7 +80,7 @@ const createList = function(name, listItems, className) {
     // listItems = object
     const list = document.createElement('ul')
     list.setAttribute('class', className)
-    list.setAttribute('id', name)
+    list.setAttribute('id', spacesToDashes(name))
     list.innerText = name
 
     for (let prop in listItems) {
@@ -96,6 +94,20 @@ const createList = function(name, listItems, className) {
         }
     }
     return list
+}
+
+const createLi = function (leftLi, rightLi, nameLi) {
+        
+    const propertiesLi = document.createElement('li')
+    propertiesLi.setAttribute('id', `${spacesToDashes(nameLi)}-${spacesToDashes(leftLi)}`)
+    
+    if (rightLi instanceof Element) {
+        propertiesLi.innerText = `${leftLi} : `
+        propertiesLi.appendChild(rightLi)
+    } else if (typeof rightLi === 'string') {
+        propertiesLi.innerText = `${leftLi} : ${rightLi}`
+    }
+    return propertiesLi
 }
 
 const createHomeWorld = function(homeWorldName, list, id) {
@@ -135,20 +147,6 @@ const createPlanet = function (planet) {
     return planetWrapper
 }
 
-const createLi = function (leftLi, rightLi, nameLi) {
-        
-    const propertiesLi = document.createElement('li')
-    propertiesLi.setAttribute('id', `${spacesToDashes(nameLi)}-${spacesToDashes(leftLi)}`)
-    
-    if (rightLi instanceof Element) {
-        propertiesLi.innerText = `${leftLi} : `
-        propertiesLi.appendChild(rightLi)
-    } else if (typeof rightLi === 'string') {
-        propertiesLi.innerText = `${leftLi} : ${rightLi}`
-    }
-    return propertiesLi
-}
-
 const createBio = function ( bio ) {
 
     // <div id="bio-wrapper">
@@ -167,7 +165,7 @@ const createBio = function ( bio ) {
     const bioWrapper = document.createElement('div')
     const heroId = `${spacesToDashes(heroName)}-bio-wrapper`
     charsStore[heroName] = heroId
-    bioWrapper.setAttribute('id', heroId)
+    bioWrapper.setAttribute('id', spacesToDashes(heroId))
     const bioList = createList(heroName, bioClean, 'char-ul')
     bioWrapper.appendChild(bioList)
 
@@ -180,19 +178,22 @@ const show = function (parent, module) {
     return
 }
 
+// helper function to make 
+// all letters to lowercase and 
+// to swap spaces with dashes for better navigation and consistency
 const spacesToDashes = function (string) {
+
     if (typeof(string) !== 'string' && !string ) {
         console.error('Must be a string')
         return 
     }
-    // helper function to make 
-    // all letters to lowercase and 
-    // to swap spaces with dashes for better navigation and consistency
+
     string = string.toLowerCase()
     return `${string.split(' ').join('-')}`
 }
 
 const removeKeys = function (obj, keys) {
+    
     // both arguments must be objects
     const cleanObj = {}
     for(let key in obj) {

@@ -3,6 +3,10 @@ body {
     color: #ffe81f;
 }
 
+ul {
+    list-style-type: none;
+   }
+
 #banner-wrapper { 
     display: flex;
     width: 50vw;
@@ -15,19 +19,18 @@ body {
  }
 
 @media screen and (max-width:51em) {
-#banner-wrapper {
-    width: 80vw;
-    height: 49.383vw;
-  }
- }
+    #banner-wrapper {
+        width: 80vw;
+        height: 49.383vw;
+    }
+}
 
 @media screen and (max-width:21em) {
-
-#banner-wrapper {
-    width: 90vw;
-    height: 55.555vw;
-  }
- }
+    #banner-wrapper {
+        width: 90vw;
+        height: 55.555vw;
+    }
+}
 
 #form-wrapper {
     display: flex;
@@ -40,22 +43,24 @@ body {
     display: flex;
 }
 
-.char-name {
-    font-size: x-large;
+@media only screen and (max-width:51em) {
+    .character-planet-wrapper {
+        flex-direction: column;
+    }
+  }
+
+.char-ul, .planet-ul {
+    font-size: xx-large;
 }
-.char-name>li {
-    font-size: medium;
+
+.char-ul>li, .planet-ul>li {
+    font-size: large;
 }
-.planet:hover{
+
+.planet:hover {
     color: red
 }
 
-.planet{
+.planet {
     color:blue
 }
-footer {
-    position: absolute;
-    min-width: 100vw;
-    bottom: 0;
-    text-align: center
-  }
