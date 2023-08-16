@@ -4,43 +4,42 @@ const api_url_coffee = "https://sampleapis.com/api-list/coffee/"
 // /hot or /iced
 
 // helper function that makes a complete endpoint
-const sw_url = function ( api, endpoint ) {
+const sw_url = function (api, endpoint) {
     return `${api}${endpoint}`
 }
 
 async function getapi (url) {
 
-    if ( typeof ( url ) !== 'string' ) console.error( 'invalid url' )
+    // try returning a planet that is already in the store
+
+    if (typeof (url) !== 'string') console.error('invalid url')
 
     try {
-
-        const response = await fetch ( url )
-        
+        const response = await fetch(url)
         const data = await response.json()
-        console.log ( 'data received' )
-
-        if ( response ) {
+        if (response) {
             hideloader()
         }
-
-        return data ? data : response
-
-    } catch ( err ) {
-        console.error(`FAILED TO FETCH ${ err }`)
+        return data
+    } catch (err) {
+        console.error(`FAILED TO FETCH ${err}`)
     }
-
 }
 
-// =====>>>> remake hide module
 function hideloader () {
-    document.getElementById('loading').style.display = 'none'
+    document.getElementById('loading').style.visibility = 'hidden'
 }
 
-const characters = sw_url ( api_url_sw, 'people' )
+const characters = sw_url (api_url_sw, 'people')
 
-const createDropdown = function ( data, key1, key2 ) {
+let selectedChar
+let currentPlanet
+let isCurrentPlanetDisplayed = false
+const charsStore = {}
+
+const createDropdown = function (data, key1, key2) {
     // error handling if no data received
-    if ( !data ) { return }
+    if (!data) return
 
     // create a list of bulletpoints to use them in dropdown menu
     // create a dropdown menu
@@ -55,8 +54,8 @@ const createDropdown = function ( data, key1, key2 ) {
     // assign attributes name and url for each option
     const createOptions = function ( ) {
     data.results
-        .reduce( (memo, obj) => memo.concat([[obj[key1], obj[key2]]]), [])
-        .forEach( (el, i, list) => {
+        .reduce((memo, obj) => memo.concat([[obj[key1], obj[key2]]]), [])
+        .forEach((el) => {
             const option = document.createElement('option')
             const charName = el[0]
             const charURL = el[1]
@@ -78,15 +77,42 @@ const createDropdown = function ( data, key1, key2 ) {
     show (formWrapper, form)
 }
 
-const removeKeys = function (obj, keys) {
-    // both arguments must be objects
-    const cleanObj = {}
-    for(let key in obj) {
-        if(!keys[key]) {
-            cleanObj[key] = obj[key]
+const createList = function(name, listItems, className) {
+    // name = string
+    // listItems = object
+    const list = document.createElement('ul')
+    list.setAttribute('class', className)
+    list.setAttribute('id', name)
+    list.innerText = name
+
+    for (let prop in listItems) {
+        if(listItems[prop] !== 'n/a') {
+            if(prop === 'homeworld') {
+                createHomeWorld(listItems[prop], list, charsStore[selectedChar])
+            } else {
+                const li = createLi(prop, listItems[prop], name);
+                list.appendChild(li)  
+            }
         }
     }
-    return cleanObj
+    return list
+}
+
+const createHomeWorld = function(homeWorldName, list, id) {
+
+    getapi(homeWorldName)
+    .then(planet => {
+        currentPlanet = createPlanet(planet)
+        const planetName = planet.result.properties.name
+        const spanPlanet = document.createElement('span')
+        const charParent = document.getElementById(id).parentNode
+        spanPlanet.textContent = planetName
+        spanPlanet.addEventListener('click', handlePlanetClick)
+        spanPlanet.setAttribute('class', 'planet')
+        planetReady = createLi('homeworld', spanPlanet, spacesToDashes(planetName))
+        list.appendChild(planetReady)
+        show(charParent, currentPlanet)
+    })
 }
 
 const createPlanet = function (planet) {
@@ -97,62 +123,30 @@ const createPlanet = function (planet) {
         "name": 1,
         "url": 1
     }
+
     const planetName = planet.result.properties.name
     const planetClean = removeKeys(planet.result.properties, unwantedKeys)
-    const planetList = createList(planetName, planetClean)
-    planetList.style.display = 'none'
+    const planetList = createList(planetName, planetClean, 'planet-ul')
+    const planetWrapper = document.createElement('div')
+    planetWrapper.setAttribute('id', `${spacesToDashes(planetName)}-planet-wrapper`)
+    planetWrapper.style.visibility = 'hidden'
+    planetWrapper.appendChild(planetList)
 
-    return planetList
+    return planetWrapper
 }
 
-let currentPlanet;
-let selectedChar;
-let isCurrentPlanetDisplayed = false;
-let charsStore = {}
-
-const createList = function(name, listItems) {
-    // name = string
-    // listItems = object
-    const list = document.createElement('ul')
-    list.innerText = name
-
-    const createLi = function (leftLi, rightLi, nameLi) {
+const createLi = function (leftLi, rightLi, nameLi) {
         
-        const propertiesLi = document.createElement('li')
-        propertiesLi.setAttribute('id', `${spacesToDashes(nameLi)}-${spacesToDashes(leftLi)}`)
-        
-        if (rightLi instanceof Element) {
-            propertiesLi.innerText = `${leftLi} : `
-            propertiesLi.appendChild(rightLi)
-        } else if (typeof rightLi === 'string') {
-            propertiesLi.innerText = `${leftLi} : ${rightLi}`
-        }
-        return propertiesLi
+    const propertiesLi = document.createElement('li')
+    propertiesLi.setAttribute('id', `${spacesToDashes(nameLi)}-${spacesToDashes(leftLi)}`)
+    
+    if (rightLi instanceof Element) {
+        propertiesLi.innerText = `${leftLi} : `
+        propertiesLi.appendChild(rightLi)
+    } else if (typeof rightLi === 'string') {
+        propertiesLi.innerText = `${leftLi} : ${rightLi}`
     }
-
-    for (let prop in listItems) {
-
-        if(listItems[prop] !== 'n/a') {
-            if(prop === 'homeworld') {
-                getapi(listItems[prop])
-                .then(planet => {
-                    currentPlanet = createPlanet(planet)
-                    const planetName = planet.result.properties.name
-                    const spanPlanet = document.createElement('span')
-                    spanPlanet.textContent = planetName
-                    spanPlanet.addEventListener('click', handlePlanetClick)
-                    spanPlanet.setAttribute('class', 'planet')
-                    const li = createLi('homeworld', spanPlanet, planetName)
-                    list.appendChild(li)
-                    li.append(currentPlanet)
-                })
-            } else {
-                const li = createLi(prop, listItems[prop], name);
-                list.appendChild(li)  
-            }
-        }
-    }
-    return list
+    return propertiesLi
 }
 
 const createBio = function ( bio ) {
@@ -174,20 +168,13 @@ const createBio = function ( bio ) {
     const heroId = `${spacesToDashes(heroName)}-bio-wrapper`
     charsStore[heroName] = heroId
     bioWrapper.setAttribute('id', heroId)
-    const bioList = createList(heroName, bioClean)
+    const bioList = createList(heroName, bioClean, 'char-ul')
     bioWrapper.appendChild(bioList)
 
     return bioWrapper
 }
 
-const show = function ( parent, module ) {
-
-    // function removeAllChildNodes(parent) {
-    //     while (parent.firstChild) {
-    //         parent.removeChild(parent.firstChild);
-    //     }
-    // }
-    // removeAllChildNodes(parent)
+const show = function (parent, module) {
 
     parent.appendChild(module)
     return
@@ -205,35 +192,55 @@ const spacesToDashes = function (string) {
     return `${string.split(' ').join('-')}`
 }
 
+const removeKeys = function (obj, keys) {
+    // both arguments must be objects
+    const cleanObj = {}
+    for(let key in obj) {
+        if(!keys[key]) {
+            cleanObj[key] = obj[key]
+        }
+    }
+    return cleanObj
+}
 // on click get information and display it
 
-const handleDropdownSelect = function ( e ) {
+const handleDropdownSelect = function (e) {
     e.preventDefault()
+
     const optionNum = e.target.selectedIndex
+    const selectedElement = document.getElementById(charsStore[selectedChar])
 
+    //if character was already selected, hide it and it's sibling
     if (selectedChar !== undefined) {
-
-        document.getElementById(charsStore[selectedChar]).style.display = 'none'
+        selectedElement.style.display = 'none'
+        selectedElement.nextSibling.style.display = 'none'
     }
+
+    //save and put in the store selected character
     selectedChar = e.target[optionNum].label
-    console.log(selectedChar)
     if (charsStore[selectedChar]) {
-        document.getElementById(charsStore[selectedChar]).style.display = 'block'
+        document.getElementById(charsStore[selectedChar]).style.visibility = 'visible'
         return
     }
     
     const optionUrl = e.target[optionNum].getAttribute('url')
-    const mainWrapper = document.getElementById('main-wrapper')
+    const wrapper = document.getElementById('form-wrapper')
+    const charPlanetWrapper = document.createElement('div')
+    charPlanetWrapper.setAttribute('class', 'character-planet-wrapper')
     getapi(optionUrl)
-    .then(data => show(mainWrapper, createBio(data)))
+    .then(data => {
+        show(charPlanetWrapper, createBio(data))
+        show(wrapper, charPlanetWrapper)
+    })
 }
 
 const handlePlanetClick = function (e) {
     e.preventDefault()
+
     if(!isCurrentPlanetDisplayed) {
-        currentPlanet.style.display = 'block'
+        currentPlanet.style.visibility = 'visible'
     } else {
-        currentPlanet.style.display = 'none'
+        currentPlanet.style.visibility = 'hidden'
     }
     isCurrentPlanetDisplayed = !isCurrentPlanetDisplayed
 }

@@ -1,3 +1,51 @@
+body {
+    background-color: black;
+    color: #ffe81f;
+}
+
+#banner-wrapper { 
+    display: flex;
+    width: 50vw;
+    height:30.864vw; /* 50:30.864 is the image's aspect ratio */
+    align-items: center;
+    justify-content: center;
+    margin: auto;
+    background-image: url(https://upload.wikimedia.org/wikipedia/commons/6/6c/Star_Wars_Logo.svg);
+    background-size: 100% auto; 
+ }
+
+@media screen and (max-width:51em) {
+#banner-wrapper {
+    width: 80vw;
+    height: 49.383vw;
+  }
+ }
+
+@media screen and (max-width:21em) {
+
+#banner-wrapper {
+    width: 90vw;
+    height: 55.555vw;
+  }
+ }
+
+#form-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100vw;
+}
+
+.character-planet-wrapper {
+    display: flex;
+}
+
+.char-name {
+    font-size: x-large;
+}
+.char-name>li {
+    font-size: medium;
+}
 .planet:hover{
     color: red
 }
@@ -5,3 +53,9 @@
 .planet{
     color:blue
 }
+footer {
+    position: absolute;
+    min-width: 100vw;
+    bottom: 0;
+    text-align: center
+  }
