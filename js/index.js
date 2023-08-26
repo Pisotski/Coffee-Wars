@@ -1,8 +1,5 @@
 const api_url_sw = "https://www.swapi.tech/api/"
 
-const api_url_coffee = "https://sampleapis.com/api-list/coffee/"
-// /hot or /iced
-
 // helper function that makes a complete endpoint
 const sw_url = function (api, endpoint) {
     return `${api}${endpoint}`
@@ -36,6 +33,7 @@ let isCurrentPlanetDisplayed = false
 const charsStore = {}
 
 const createDropdown = function (data, key1, key2) {
+
     // error handling if no data received
     if (!data) return
 
@@ -43,14 +41,16 @@ const createDropdown = function (data, key1, key2) {
     // create a dropdown menu
     const formWrapper = document.getElementById('form-wrapper')
     const form = document.createElement('form')
+    form.setAttribute('id', 'characters-list-form')
     const select = document.createElement('select')
+    select.setAttribute('id', 'characters-list-select')
     select.addEventListener('change', handleDropdownSelect)
     form.appendChild(select)
 
     // populate the menu
     // flatten the array. make tuples [name and url]
     // assign attributes name and url for each option
-    const createOptions = function ( ) {
+    const createOptions = function () {
     data.results
         .reduce((memo, obj) => memo.concat([[obj[key1], obj[key2]]]), [])
         .forEach((el) => {
@@ -61,13 +61,7 @@ const createDropdown = function (data, key1, key2) {
             option.setAttribute('url', charURL)
             select.append(option)
         })
-        const defaultOption = document.createElement('option')
-        defaultOption.setAttribute('value', 'none')
-        defaultOption.setAttribute('label', 'Select a Character')
-        defaultOption.setAttribute('class', 'default-option')
-        defaultOption.selected = true
-        defaultOption.disabled = true
-        defaultOption.hidden = true
+        const defaultOption = defaultOptionElementForDropdown()
         select.append(defaultOption)
     }
     createOptions()
@@ -75,20 +69,32 @@ const createDropdown = function (data, key1, key2) {
     show (formWrapper, form)
 }
 
-const createList = function(name, listItems, className) {
+const defaultOptionElementForDropdown = function () {
+    const defaultOption = document.createElement('option')
+    defaultOption.setAttribute('value', 'none')
+    defaultOption.setAttribute('label', 'Select a Character')
+    defaultOption.setAttribute('class', 'default-option')
+    defaultOption.selected = true
+    defaultOption.disabled = true
+    defaultOption.hidden = true
+    return defaultOption
+}
+
+const createList = function (name, listItems, className) {
     // name = string
     // listItems = object
+
     const list = document.createElement('ul')
     list.setAttribute('class', className)
     list.setAttribute('id', spacesToDashes(name))
     list.innerText = name
 
-    for (let prop in listItems) {
-        if(listItems[prop] !== 'n/a') {
-            if(prop === 'homeworld') {
-                createHomeWorld(listItems[prop], list, charsStore[selectedChar])
+    for (let key in listItems) {
+        if(listItems[key] !== 'n/a') {
+            if(key === 'homeworld') {
+                createHomeWorld(listItems[key], list, charsStore[selectedChar])
             } else {
-                const li = createLi(prop, listItems[prop], name);
+                const li = createLi(key, listItems[key], name);
                 list.appendChild(li)  
             }
         }
@@ -100,31 +106,39 @@ const createLi = function (leftLi, rightLi, nameLi) {
         
     const propertiesLi = document.createElement('li')
     propertiesLi.setAttribute('id', `${spacesToDashes(nameLi)}-${spacesToDashes(leftLi)}`)
-    
+    const leftTextReady = normalizeText(leftLi)
+
     if (rightLi instanceof Element) {
-        propertiesLi.innerText = `${leftLi} : `
+        propertiesLi.innerText = `${leftTextReady} : `
         propertiesLi.appendChild(rightLi)
     } else if (typeof rightLi === 'string') {
-        propertiesLi.innerText = `${leftLi} : ${rightLi}`
+        propertiesLi.innerText = `${leftTextReady} : ${rightLi}`
     }
     return propertiesLi
 }
 
-const createHomeWorld = function(homeWorldName, list, id) {
+// API call
+const createHomeWorld = function (homeWorldName, list, id) {
 
     getapi(homeWorldName)
     .then(planet => {
+
         currentPlanet = createPlanet(planet)
+
         const planetName = planet.result.properties.name
         const spanPlanet = document.createElement('span')
         const charParent = document.getElementById(id).parentNode
+
         spanPlanet.textContent = planetName
         spanPlanet.addEventListener('click', handlePlanetClick)
         spanPlanet.setAttribute('class', 'planet')
+
         planetReady = createLi('homeworld', spanPlanet, spacesToDashes(planetName))
         list.appendChild(planetReady)
+
         show(charParent, currentPlanet)
     })
+    .catch(error => console.error(`FAILED TO LOAD THE MODULE: PLANET ${error}`))
 }
 
 const createPlanet = function (planet) {
@@ -147,7 +161,7 @@ const createPlanet = function (planet) {
     return planetWrapper
 }
 
-const createBio = function ( bio ) {
+const createBio = function (bio) {
 
     // <div id="bio-wrapper">
     //    <ul id="${name}-bio-ul" label="name">
@@ -192,6 +206,20 @@ const spacesToDashes = function (string) {
     return `${string.split(' ').join('-')}`
 }
 
+const normalizeText = function(string) {
+    
+    if (typeof string !== 'string') return
+
+    const splittedString = string.split('')
+    return splittedString.map((char, i) => 
+        {
+        if (i === 0 || splittedString[i-1] === '_') return char.toUpperCase()
+        if (char === '_')  return ' ' 
+        return char
+    })
+    .join('')
+}
+
 const removeKeys = function (obj, keys) {
     
     // both arguments must be objects
@@ -205,6 +233,7 @@ const removeKeys = function (obj, keys) {
 }
 // on click get information and display it
 
+// API CALL
 const handleDropdownSelect = function (e) {
     e.preventDefault()
 
@@ -217,8 +246,10 @@ const handleDropdownSelect = function (e) {
         selectedElement.nextSibling.style.display = 'none'
     }
 
-    //save and put in the store selected character
+    //save and put selected character to the store 
     selectedChar = e.target[optionNum].label
+
+    //if selected character was fetched before, display it
     if (charsStore[selectedChar]) {
         document.getElementById(charsStore[selectedChar]).style.visibility = 'visible'
         return
@@ -227,12 +258,15 @@ const handleDropdownSelect = function (e) {
     const optionUrl = e.target[optionNum].getAttribute('url')
     const wrapper = document.getElementById('form-wrapper')
     const charPlanetWrapper = document.createElement('div')
+    
     charPlanetWrapper.setAttribute('class', 'character-planet-wrapper')
     getapi(optionUrl)
     .then(data => {
         show(charPlanetWrapper, createBio(data))
         show(wrapper, charPlanetWrapper)
     })
+    .catch(error => console.error(`FAILED TO LOAD THE MODULE: CHARACTER ${error}`))
+
 }
 
 const handlePlanetClick = function (e) {
@@ -246,5 +280,7 @@ const handlePlanetClick = function (e) {
     isCurrentPlanetDisplayed = !isCurrentPlanetDisplayed
 }
 
+// API CALL
 const showDropDown = getapi(characters)
     .then(data => createDropdown(data,'name','url'))
+    .catch(error => console.error(`FAILED TO LOAD THE MODULE: DROPDOWN MENU ${error}`))
