@@ -1,6 +1,18 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+    --star_wars_original_yellow: #ffe81f;
+    --dark: black;
+    --dropdown-bg-select-color: #2C3E50;
+}
+
 body {
-    background-color: black;
-    color: #ffe81f;
+    background-color: var(--dark);
+    color: var(--star_wars_original_yellow);
 }
 
 ul {
@@ -33,6 +45,7 @@ ul {
 }
 
 #form-wrapper {
+    font-family: Arial;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -65,3 +78,49 @@ ul {
     color:blue
 }
 
+/* Customization form-select START <==== */
+
+select{
+    appearance: none;
+    background-color: transparent;
+    border: none;
+    padding: 0 1em 0 0;
+    margin: 0;
+    width: 100%;
+    font-family: inherit;
+    font-size: inherit;
+    cursor: inherit;
+    line-height: inherit;
+}
+
+/* arrow removal for IE */
+select::-ms-expand {
+    display: none;
+}
+
+#characters-list-form {
+    min-width: 30ch;
+    max-width: 40ch;
+}
+
+#characters-list-select {
+    width: 100%;
+    min-width: 15ch;
+    max-width: 30ch;
+    border: 1px solid var(--star_wars_original_yellow);
+    border-radius: 0.25em;
+    padding: 0.25em 0.5em;
+    font-size: 1.25rem;
+    cursor: pointer;
+    line-height: 1.1;
+    background-color: var(--dropdown-bg-select-color);
+    color: var(--star_wars_original_yellow);
+}
+
+#characters-list-select::after {
+    content: "";
+    width: 0.8em;
+    height: 0.5em;
+    background-color: var(--star_wars_original_yellow);
+    clip-path: circle(50% at 50% 50%);
+}

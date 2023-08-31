@@ -1,9 +1,18 @@
 const api_url_sw = "https://www.swapi.tech/api/"
 
+let selectedChar
+let currentPlanet
+let isCurrentPlanetDisplayed = false
+const charsStore = {}
+
 // helper function that makes a complete endpoint
-const sw_url = function (api, endpoint) {
+// CHANGE VARIABLE NAMES
+
+// redo this to nested object for more clear list of endpoints
+const sw_url = function(api, endpoint) {
     return `${api}${endpoint}`
 }
+const characters = sw_url(api_url_sw, 'people')
 
 async function getapi (url) {
 
@@ -25,13 +34,6 @@ function hideloader () {
     document.getElementById('loading').style.display = 'none'
 }
 
-const characters = sw_url (api_url_sw, 'people')
-
-let selectedChar
-let currentPlanet
-let isCurrentPlanetDisplayed = false
-const charsStore = {}
-
 const createDropdown = function (data, key1, key2) {
 
     // error handling if no data received
@@ -40,11 +42,8 @@ const createDropdown = function (data, key1, key2) {
     // create a list of bulletpoints to use them in dropdown menu
     // create a dropdown menu
     const formWrapper = document.getElementById('form-wrapper')
-    const form = document.createElement('form')
-    form.setAttribute('id', 'characters-list-form')
-    const select = document.createElement('select')
-    select.setAttribute('id', 'characters-list-select')
-    select.addEventListener('change', handleDropdownSelect)
+    const form = formTemplate()
+    const select = selectTemplate()
     form.appendChild(select)
 
     // populate the menu
@@ -69,7 +68,23 @@ const createDropdown = function (data, key1, key2) {
     show (formWrapper, form)
 }
 
+const formTemplate = function() {
+
+    const form = document.createElement('div')
+    form.setAttribute('id', 'characters-list-form')
+    return form
+}
+
+const selectTemplate = function() {
+
+    const select = document.createElement('select')
+    select.setAttribute('id', 'characters-list-select')
+    select.addEventListener('change', handleDropdownSelect)
+    return select
+}
+
 const defaultOptionElementForDropdown = function () {
+    
     const defaultOption = document.createElement('option')
     defaultOption.setAttribute('value', 'none')
     defaultOption.setAttribute('label', 'Select a Character')
@@ -241,9 +256,11 @@ const handleDropdownSelect = function (e) {
     const selectedElement = document.getElementById(charsStore[selectedChar])
 
     //if character was already selected, hide it and it's sibling
+    //deselect a planet
     if (selectedChar !== undefined) {
         selectedElement.style.display = 'none'
         selectedElement.nextSibling.style.display = 'none'
+        currentPlanet.style.visibility = 'hidden'
     }
 
     //save and put selected character to the store 
