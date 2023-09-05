@@ -58,12 +58,12 @@ all nodes are named in the same format
 Example:
 <div id="character-planet-wrapper">
     <div id="r2-d2-bio-wrapper">
-        <ul id="r2-d2">
+        <ul id="r2-d2">R2-D2
             <li id="r2-d2-height"></li>
         </ul>
     </div>
     <div id="naboo-planet-wrapper">
-        <ul id="naboo">
+        <ul id="naboo">Naboo
             <li id="naboo-diameter"></li>
         </ul>
     <div>

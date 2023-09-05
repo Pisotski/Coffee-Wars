@@ -1,18 +1,25 @@
-const api_url_sw = "https://www.swapi.tech/api/"
-
-let selectedChar
+// string. "darth-vader"
+let selectedCharsId
+// dom element
+// <div id="tattoine-planet-wrapper">...</div>
 let currentPlanet
+// boolean
 let isCurrentPlanetDisplayed = false
-const charsStore = {}
+// create a store to prevent unnesessary fetching.
+const charsStore = {
 
-// helper function that makes a complete endpoint
-// CHANGE VARIABLE NAMES
+    // key: name-tolowercase-with-dashes
+    // value: key-bio-wrapper
+    
+    //  r2-d2: "r2-d2-bio-wrapper",
+    //  darth-vader: "darth-vader-bio-wrapper"
 
-// redo this to nested object for more clear list of endpoints
-const sw_url = function(api, endpoint) {
-    return `${api}${endpoint}`
 }
-const characters = sw_url(api_url_sw, 'people')
+
+const starWarsUrl = {
+    people: "https://www.swapi.tech/api/people",
+    planets: "https://www.swapi.tech/api/planets"
+}
 
 async function getapi (url) {
 
@@ -48,7 +55,7 @@ const createDropdown = function (data, key1, key2) {
 
     // populate the menu
     // flatten the array. make tuples [name and url]
-    // assign attributes name and url for each option
+    // assign attributes: name and url for each option
     const createOptions = function () {
     data.results
         .reduce((memo, obj) => memo.concat([[obj[key1], obj[key2]]]), [])
@@ -70,7 +77,7 @@ const createDropdown = function (data, key1, key2) {
 
 const formTemplate = function() {
 
-    const form = document.createElement('div')
+    const form = document.createElement('form')
     form.setAttribute('id', 'characters-list-form')
     return form
 }
@@ -96,18 +103,20 @@ const defaultOptionElementForDropdown = function () {
 }
 
 const createList = function (name, listItems, className) {
-    // name = string
+    // name = string, non-standartized
     // listItems = object
+    // className = string, standard
 
     const list = document.createElement('ul')
     list.setAttribute('class', className)
-    list.setAttribute('id', spacesToDashes(name))
+    const standardName = spacesToDashes(name)
+    list.setAttribute('id', standardName)
     list.innerText = name
 
     for (let key in listItems) {
         if(listItems[key] !== 'n/a') {
             if(key === 'homeworld') {
-                createHomeWorld(listItems[key], list, charsStore[selectedChar])
+                createHomeWorld(listItems[key], list, charsStore[selectedCharsId])
             } else {
                 const li = createLi(key, listItems[key], name);
                 list.appendChild(li)  
@@ -133,20 +142,20 @@ const createLi = function (leftLi, rightLi, nameLi) {
 }
 
 // API call
+// passed from createList function
 const createHomeWorld = function (homeWorldName, list, id) {
 
     getapi(homeWorldName)
     .then(planet => {
 
         currentPlanet = createPlanet(planet)
-
         const planetName = planet.result.properties.name
         const spanPlanet = document.createElement('span')
         const charParent = document.getElementById(id).parentNode
 
         spanPlanet.textContent = planetName
         spanPlanet.addEventListener('click', handlePlanetClick)
-        spanPlanet.setAttribute('class', 'planet')
+        spanPlanet.setAttribute('class', 'planet-name-interactable')
 
         planetReady = createLi('homeworld', spanPlanet, spacesToDashes(planetName))
         list.appendChild(planetReady)
@@ -184,6 +193,7 @@ const createBio = function (bio) {
 
     const bioProperties = bio.result.properties
     const heroName = bioProperties.name
+    const heroNameStandard = spacesToDashes(heroName)
     const unwantedKeys = {
         'name': 1,
         'created': 1,
@@ -192,9 +202,9 @@ const createBio = function (bio) {
     }
     const bioClean = removeKeys(bioProperties, unwantedKeys)
     const bioWrapper = document.createElement('div')
-    const heroId = `${spacesToDashes(heroName)}-bio-wrapper`
-    charsStore[heroName] = heroId
-    bioWrapper.setAttribute('id', spacesToDashes(heroId))
+    const heroWrapperId = `${heroNameStandard}-bio-wrapper`
+    charsStore[heroNameStandard] = heroWrapperId
+    bioWrapper.setAttribute('id', heroWrapperId)
     const bioList = createList(heroName, bioClean, 'char-ul')
     bioWrapper.appendChild(bioList)
 
@@ -251,27 +261,41 @@ const removeKeys = function (obj, keys) {
 // API CALL
 const handleDropdownSelect = function (e) {
     e.preventDefault()
+    // hide previous results if any
+    // toggle current planet visibility a planet
+    if (selectedCharsId !== undefined) {
 
-    const optionNum = e.target.selectedIndex
-    const selectedElement = document.getElementById(charsStore[selectedChar])
-
-    //if character was already selected, hide it and it's sibling
-    //deselect a planet
-    if (selectedChar !== undefined) {
-        selectedElement.style.display = 'none'
-        selectedElement.nextSibling.style.display = 'none'
-        currentPlanet.style.visibility = 'hidden'
+        const toHideCharactersWrapper = document.getElementById(selectedCharsId).parentNode
+        const toHidePlanetWrapper = toHideCharactersWrapper.nextElementSibling
+        const toHidePlanetCharacterWrapper = toHideCharactersWrapper.parentNode
+        toHidePlanetCharacterWrapper.style.display = 'none'
+        toHidePlanetWrapper.style.visibility = 'hidden'
+        isCurrentPlanetDisplayed = false
     }
+    
+    // identify the character to be displayed
+    const optionNum = e.target.selectedIndex
 
-    //save and put selected character to the store 
-    selectedChar = e.target[optionNum].label
-
-    //if selected character was fetched before, display it
-    if (charsStore[selectedChar]) {
-        document.getElementById(charsStore[selectedChar]).style.visibility = 'visible'
+    // select or reassign a character
+    // standartize it
+    
+    selectedCharsId = spacesToDashes(e.target[optionNum].label)
+    
+    // lookup the store
+    // select DOM element if character is in the store
+    // unhide the element
+    // select current planet
+    if (charsStore[selectedCharsId]) {
+        
+        const storedCharacterNode = document.getElementById(charsStore[selectedCharsId])
+        const toShowPlanetCharacterWrapper = storedCharacterNode.parentNode
+        console.log(toShowPlanetCharacterWrapper) 
+        toShowPlanetCharacterWrapper.style.display = 'block'
+        currentPlanet = storedCharacterNode.nextElementSibling
         return
     }
     
+    // if selecter character is not in the store, create new bio and planet
     const optionUrl = e.target[optionNum].getAttribute('url')
     const wrapper = document.getElementById('form-wrapper')
     const charPlanetWrapper = document.createElement('div')
@@ -283,6 +307,13 @@ const handleDropdownSelect = function (e) {
         show(wrapper, charPlanetWrapper)
     })
     .catch(error => console.error(`FAILED TO LOAD THE MODULE: CHARACTER ${error}`))
+
+}
+const hideSelectedWrapper = function() {
+
+}
+
+const showSelectedWrapper = function() {
 
 }
 
@@ -298,6 +329,6 @@ const handlePlanetClick = function (e) {
 }
 
 // API CALL
-const showDropDown = getapi(characters)
+const showDropDown = getapi(starWarsUrl.people)
     .then(data => createDropdown(data,'name','url'))
     .catch(error => console.error(`FAILED TO LOAD THE MODULE: DROPDOWN MENU ${error}`))

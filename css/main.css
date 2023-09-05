@@ -70,11 +70,11 @@ ul {
     font-size: large;
 }
 
-.planet:hover {
+.planet-name-interactable:hover {
     color: red
 }
 
-.planet {
+.planet-name-interactable {
     color:blue
 }
 
