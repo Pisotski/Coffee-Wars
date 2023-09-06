@@ -9,12 +9,14 @@ let isCurrentPlanetDisplayed = false
 const charsStore = {
 
     // key: name-tolowercase-with-dashes
-    // value: key-bio-wrapper
+    // value: <div id="key-bio-wrapper">...</div>,
     
-    //  r2-d2: "r2-d2-bio-wrapper",
-    //  darth-vader: "darth-vader-bio-wrapper"
+    //  r2-d2: <div id="r2-d2-bio-wrapper">...</div>,
+    //  darth-vader: <div id="darth-vader-bio-wrapper">...</div>,
 
 }
+// parent node for main content
+const mainWrapper = document.getElementById('form-wrapper')
 
 const starWarsUrl = {
     people: "https://www.swapi.tech/api/people",
@@ -36,45 +38,7 @@ async function getapi (url) {
     }
 }
 
-function hideloader () {
-
-    document.getElementById('loading').style.display = 'none'
-}
-
-const createDropdown = function (data, key1, key2) {
-
-    // error handling if no data received
-    if (!data) return
-
-    // create a list of bulletpoints to use them in dropdown menu
-    // create a dropdown menu
-    const formWrapper = document.getElementById('form-wrapper')
-    const form = formTemplate()
-    const select = selectTemplate()
-    form.appendChild(select)
-
-    // populate the menu
-    // flatten the array. make tuples [name and url]
-    // assign attributes: name and url for each option
-    const createOptions = function () {
-    data.results
-        .reduce((memo, obj) => memo.concat([[obj[key1], obj[key2]]]), [])
-        .forEach((el) => {
-            const option = document.createElement('option')
-            const charName = el[0]
-            const charURL = el[1]
-            option.setAttribute('label', charName)
-            option.setAttribute('url', charURL)
-            select.append(option)
-        })
-        const defaultOption = defaultOptionElementForDropdown()
-        select.append(defaultOption)
-    }
-    createOptions()
-
-    show (formWrapper, form)
-}
-
+// >>> [TEMPLATES] for DOM elements to change properties if needed
 const formTemplate = function() {
 
     const form = document.createElement('form')
@@ -101,7 +65,76 @@ const defaultOptionElementForDropdown = function () {
     defaultOption.hidden = true
     return defaultOption
 }
+// <<< [TEMPLATES END]
 
+// >>>[HELPER FUNCTIONS] to  
+// make all letters to lowercase and in Title Case
+// swap spaces with dashes for better navigation and consistency
+const spacesToDashes = function (string) {
+
+    if (typeof(string) !== 'string' && !string ) {
+        console.error('Must be a string')
+        return 
+    }
+
+    string = string.toLowerCase()
+    return `${string.split(' ').join('-')}`
+}
+
+// display text with no underscores. and in Title Case
+const normalizeText = function(string) {
+    
+    if (typeof string !== 'string') return
+
+    const splittedString = string.split('')
+    return splittedString.map((char, i) => 
+        {
+        if (i === 0 || splittedString[i-1] === '_') return char.toUpperCase()
+        if (char === '_')  return ' ' 
+        return char
+    })
+    .join('')
+}
+
+// remove unwanted information when data is received from the server
+const removeKeys = function (obj, keys) {
+    
+    // both arguments must be objects
+    const cleanObj = {}
+    for (let key in obj) {
+        if(!keys[key]) {
+            cleanObj[key] = obj[key]
+        }
+    }
+    return cleanObj
+}
+
+// display the block on the screen
+const show = function (parent, module) {
+
+    parent.appendChild(module)
+    return
+}
+
+// hide the block
+function hideloader () {
+
+    document.getElementById('loading').style.display = 'none'
+}
+// <<< [HELPER FUNCTIONS END]
+
+
+// >>>[MAIN LOGIC].
+    // functions are called in this order
+    // 'on-select' [API CALL 2]handleDropdownSelect => createBio => createList(biography) => createLi
+    //              the last line in characters' biogaphy is a name of the planet (homeworld). here the third api call is made
+    //              when createList function gets to the 'homeworld' line
+    //              createList => [API CALL 3]createHomeWorld => createPlanet => createList(planet) => createLi
+
+    // >>>[CREATORS] functions that create dom elements
+        // After user choose a character from dropdown menu
+        // Both lists [CHARACTERS BIO] and [PLANET INFO] are created.
+        // [PLANET INFO] remains hidden
 const createList = function (name, listItems, className) {
     // name = string, non-standartized
     // listItems = object
@@ -128,30 +161,30 @@ const createList = function (name, listItems, className) {
 
 const createLi = function (leftLi, rightLi, nameLi) {
         
-    const propertiesLi = document.createElement('li')
-    propertiesLi.setAttribute('id', `${spacesToDashes(nameLi)}-${spacesToDashes(leftLi)}`)
+    const newLi = document.createElement('li')
+    newLi.setAttribute('id', `${spacesToDashes(nameLi)}-${spacesToDashes(leftLi)}`)
     const leftTextReady = normalizeText(leftLi)
 
     if (rightLi instanceof Element) {
-        propertiesLi.innerText = `${leftTextReady} : `
-        propertiesLi.appendChild(rightLi)
+        newLi.innerText = `${leftTextReady} : `
+        newLi.appendChild(rightLi)
     } else if (typeof rightLi === 'string') {
-        propertiesLi.innerText = `${leftTextReady} : ${rightLi}`
+        newLi.innerText = `${leftTextReady} : ${rightLi}`
     }
-    return propertiesLi
+    return newLi
 }
 
-// API call
-// passed from createList function
-const createHomeWorld = function (homeWorldName, list, id) {
+//                                                              API CALL 3
+const createHomeWorld = function (homeWorldName, list, charNode) {
 
     getapi(homeWorldName)
     .then(planet => {
 
         currentPlanet = createPlanet(planet)
+
         const planetName = planet.result.properties.name
         const spanPlanet = document.createElement('span')
-        const charParent = document.getElementById(id).parentNode
+        const charParent = charNode.parentNode
 
         spanPlanet.textContent = planetName
         spanPlanet.addEventListener('click', handlePlanetClick)
@@ -194,6 +227,7 @@ const createBio = function (bio) {
     const bioProperties = bio.result.properties
     const heroName = bioProperties.name
     const heroNameStandard = spacesToDashes(heroName)
+    
     const unwantedKeys = {
         'name': 1,
         'created': 1,
@@ -202,70 +236,28 @@ const createBio = function (bio) {
     }
     const bioClean = removeKeys(bioProperties, unwantedKeys)
     const bioWrapper = document.createElement('div')
-    const heroWrapperId = `${heroNameStandard}-bio-wrapper`
-    charsStore[heroNameStandard] = heroWrapperId
-    bioWrapper.setAttribute('id', heroWrapperId)
+    // store biography parent node of a character
+    charsStore[heroNameStandard] = bioWrapper
+
+    const heroBioWrapperId = `${heroNameStandard}-bio-wrapper`
+    bioWrapper.setAttribute('id', heroBioWrapperId)
     const bioList = createList(heroName, bioClean, 'char-ul')
     bioWrapper.appendChild(bioList)
 
+
     return bioWrapper
 }
+    // <<< [CREATORS END]
 
-const show = function (parent, module) {
-
-    parent.appendChild(module)
-    return
-}
-
-// helper function to make 
-// all letters to lowercase and 
-// to swap spaces with dashes for better navigation and consistency
-const spacesToDashes = function (string) {
-
-    if (typeof(string) !== 'string' && !string ) {
-        console.error('Must be a string')
-        return 
-    }
-
-    string = string.toLowerCase()
-    return `${string.split(' ').join('-')}`
-}
-
-const normalizeText = function(string) {
-    
-    if (typeof string !== 'string') return
-
-    const splittedString = string.split('')
-    return splittedString.map((char, i) => 
-        {
-        if (i === 0 || splittedString[i-1] === '_') return char.toUpperCase()
-        if (char === '_')  return ' ' 
-        return char
-    })
-    .join('')
-}
-
-const removeKeys = function (obj, keys) {
-    
-    // both arguments must be objects
-    const cleanObj = {}
-    for(let key in obj) {
-        if(!keys[key]) {
-            cleanObj[key] = obj[key]
-        }
-    }
-    return cleanObj
-}
-// on click get information and display it
-
-// API CALL
+    // >>> [EVENT HANDLERS] START
+//                                                              API CALL 2
 const handleDropdownSelect = function (e) {
     e.preventDefault()
     // hide previous results if any
     // toggle current planet visibility a planet
     if (selectedCharsId !== undefined) {
 
-        const toHideCharactersWrapper = document.getElementById(selectedCharsId).parentNode
+        const toHideCharactersWrapper = charsStore[selectedCharsId]
         const toHidePlanetWrapper = toHideCharactersWrapper.nextElementSibling
         const toHidePlanetCharacterWrapper = toHideCharactersWrapper.parentNode
         toHidePlanetCharacterWrapper.style.display = 'none'
@@ -287,33 +279,26 @@ const handleDropdownSelect = function (e) {
     // select current planet
     if (charsStore[selectedCharsId]) {
         
-        const storedCharacterNode = document.getElementById(charsStore[selectedCharsId])
+        const storedCharacterNode = charsStore[selectedCharsId]
         const toShowPlanetCharacterWrapper = storedCharacterNode.parentNode
-        console.log(toShowPlanetCharacterWrapper) 
         toShowPlanetCharacterWrapper.style.display = 'block'
         currentPlanet = storedCharacterNode.nextElementSibling
         return
     }
     
-    // if selecter character is not in the store, create new bio and planet
+    // if selected character is not in the store, create new bio and planet
     const optionUrl = e.target[optionNum].getAttribute('url')
-    const wrapper = document.getElementById('form-wrapper')
     const charPlanetWrapper = document.createElement('div')
     
     charPlanetWrapper.setAttribute('class', 'character-planet-wrapper')
     getapi(optionUrl)
     .then(data => {
-        show(charPlanetWrapper, createBio(data))
-        show(wrapper, charPlanetWrapper)
+        // create list with characters biography
+        const charBio = createBio(data)
+        show(charPlanetWrapper, charBio)
+        show(mainWrapper, charPlanetWrapper)
     })
     .catch(error => console.error(`FAILED TO LOAD THE MODULE: CHARACTER ${error}`))
-
-}
-const hideSelectedWrapper = function() {
-
-}
-
-const showSelectedWrapper = function() {
 
 }
 
@@ -327,8 +312,48 @@ const handlePlanetClick = function (e) {
     }
     isCurrentPlanetDisplayed = !isCurrentPlanetDisplayed
 }
+    // <<< [EVENT HANDLERS END]
 
-// API CALL
+// <<< [MAIN LOGIC END]
+
+// >>> [INITIAL CALL] call for the names to the star wars server.
+// display the menu with names
+
+const createDropdown = function (data, key1, key2) {
+
+    // error handling if no data received
+    if (!data) return
+
+    // create a list for dropdown menu
+    // create a dropdown menu
+    const form = formTemplate()
+    const select = selectTemplate()
+    form.appendChild(select)
+
+    // populate the menu
+    // flatten the array. make tuples [name and url]
+    // assign attributes: name and url for each option
+    const createOptions = function () {
+    data.results
+        .reduce((memo, obj) => memo.concat([[obj[key1], obj[key2]]]), [])
+        .forEach((el) => {
+            const option = document.createElement('option')
+            const charName = el[0]
+            const charURL = el[1]
+            option.setAttribute('label', charName)
+            option.setAttribute('url', charURL)
+            select.append(option)
+        })
+        const defaultOption = defaultOptionElementForDropdown()
+        select.append(defaultOption)
+    }
+    createOptions()
+
+    show (mainWrapper, form)
+}
+
+//                                                              API CALL 1
 const showDropDown = getapi(starWarsUrl.people)
     .then(data => createDropdown(data,'name','url'))
     .catch(error => console.error(`FAILED TO LOAD THE MODULE: DROPDOWN MENU ${error}`))
+// <<< [INITIAL CALL ENDS]
