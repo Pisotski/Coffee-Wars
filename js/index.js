@@ -304,7 +304,8 @@ const handleDropdownSelect = function (e) {
 
         // create list with characters biography
         const charBio = createBio(data)
-        show(charPlanetWrapper, charBio)
+        charPlanetWrapper.appendChild(charBio)
+        
         show(mainWrapper, charPlanetWrapper)
     })
     .catch(error => console.error(`FAILED TO LOAD THE MODULE: CHARACTER ${error}`))
@@ -351,10 +352,10 @@ const createDropdown = function (data, key1, key2) {
             const charURL = el[1]
             option.setAttribute('label', charName)
             option.setAttribute('url', charURL)
-            select.append(option)
+            select.appendChild(option)
         })
         const defaultOption = defaultOptionElementForDropdown()
-        select.append(defaultOption)
+        select.appendChild(defaultOption)
     }
     createOptions()
 
