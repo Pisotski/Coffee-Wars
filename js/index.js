@@ -1,11 +1,14 @@
 // string. "darth-vader"
 let selectedCharsId
+
 // dom element
 // <div id="tattoine-planet-wrapper">...</div>
 let currentPlanet
+
 // boolean
 let isCurrentPlanetDisplayed = false
-// create a store to prevent unnesessary fetching.
+
+// create a store to prevent unnesessary fetching
 const charsStore = {
 
     // key: name-tolowercase-with-dashes
@@ -15,6 +18,7 @@ const charsStore = {
     //  darth-vader: <div id="darth-vader-bio-wrapper">...</div>,
 
 }
+
 // parent node for main content
 const mainWrapper = document.getElementById('form-wrapper')
 
@@ -68,7 +72,7 @@ const defaultOptionElementForDropdown = function () {
 // <<< [TEMPLATES END]
 
 // >>>[HELPER FUNCTIONS] to  
-// make all letters to lowercase and in Title Case
+// make all letters to lowercase
 // swap spaces with dashes for better navigation and consistency
 const spacesToDashes = function (string) {
 
@@ -84,7 +88,10 @@ const spacesToDashes = function (string) {
 // display text with no underscores. and in Title Case
 const normalizeText = function(string) {
     
-    if (typeof string !== 'string') return
+    if (typeof(string) !== 'string' && !string ) {
+        console.error('Must be a string')
+        return 
+    }
 
     const splittedString = string.split('')
     return splittedString.map((char, i) => 
@@ -98,13 +105,12 @@ const normalizeText = function(string) {
 
 // remove unwanted information when data is received from the server
 const removeKeys = function (obj, keys) {
-    
+
     // both arguments must be objects
+    // should add error handling
     const cleanObj = {}
     for (let key in obj) {
-        if(!keys[key]) {
-            cleanObj[key] = obj[key]
-        }
+        if(!keys[key]) cleanObj[key] = obj[key]
     }
     return cleanObj
 }
@@ -136,6 +142,7 @@ function hideloader () {
         // Both lists [CHARACTERS BIO] and [PLANET INFO] are created.
         // [PLANET INFO] remains hidden
 const createList = function (name, listItems, className) {
+
     // name = string, non-standartized
     // listItems = object
     // className = string, standard
@@ -185,12 +192,13 @@ const createHomeWorld = function (homeWorldName, list, charNode) {
         const planetName = planet.result.properties.name
         const spanPlanet = document.createElement('span')
         const charParent = charNode.parentNode
+        const planetReady = createLi('homeworld', spanPlanet, planetName)
+
 
         spanPlanet.textContent = planetName
         spanPlanet.addEventListener('click', handlePlanetClick)
         spanPlanet.setAttribute('class', 'planet-name-interactable')
 
-        planetReady = createLi('homeworld', spanPlanet, spacesToDashes(planetName))
         list.appendChild(planetReady)
 
         show(charParent, currentPlanet)
@@ -253,8 +261,9 @@ const createBio = function (bio) {
 //                                                              API CALL 2
 const handleDropdownSelect = function (e) {
     e.preventDefault()
+
     // hide previous results if any
-    // toggle current planet visibility a planet
+    // toggle current planet visibility
     if (selectedCharsId !== undefined) {
 
         const toHideCharactersWrapper = charsStore[selectedCharsId]
@@ -270,7 +279,6 @@ const handleDropdownSelect = function (e) {
 
     // select or reassign a character
     // standartize it
-    
     selectedCharsId = spacesToDashes(e.target[optionNum].label)
     
     // lookup the store
@@ -281,7 +289,7 @@ const handleDropdownSelect = function (e) {
         
         const storedCharacterNode = charsStore[selectedCharsId]
         const toShowPlanetCharacterWrapper = storedCharacterNode.parentNode
-        toShowPlanetCharacterWrapper.style.display = 'block'
+        toShowPlanetCharacterWrapper.style.display = 'flex'
         currentPlanet = storedCharacterNode.nextElementSibling
         return
     }
@@ -289,17 +297,17 @@ const handleDropdownSelect = function (e) {
     // if selected character is not in the store, create new bio and planet
     const optionUrl = e.target[optionNum].getAttribute('url')
     const charPlanetWrapper = document.createElement('div')
-    
     charPlanetWrapper.setAttribute('class', 'character-planet-wrapper')
+    
     getapi(optionUrl)
     .then(data => {
+
         // create list with characters biography
         const charBio = createBio(data)
         show(charPlanetWrapper, charBio)
         show(mainWrapper, charPlanetWrapper)
     })
     .catch(error => console.error(`FAILED TO LOAD THE MODULE: CHARACTER ${error}`))
-
 }
 
 const handlePlanetClick = function (e) {
@@ -322,6 +330,7 @@ const handlePlanetClick = function (e) {
 const createDropdown = function (data, key1, key2) {
 
     // error handling if no data received
+    // should be better
     if (!data) return
 
     // create a list for dropdown menu
